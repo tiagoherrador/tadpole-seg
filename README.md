@@ -40,7 +40,7 @@ It is a research and portfolio project, not a finished measuring instrument: see
 | Training | 50 rounds (epochs) over the photos, batch of 2, AdamW optimiser, learning rate lowered when progress stalls |
 | Model kept | the round with the lowest error on the 4 check photos |
 
-*(My folder holds a few more annotated photos than the 18 that this training run used: the notebook only picked up the masks saved as `.png`.)*
+*(My folder holds 11 more annotated photos (emb_002 to emb_012) than the 18 that this training run used: their masks were saved as `.jpg` and the notebook only picked up the masks saved as `.png`. The network never saw them, so I use them below as a test.)*
 
 ![Overlap with the hand-drawn mask while training](assets/validation_metrics.png)
 
@@ -63,8 +63,32 @@ In **emb_047 the hand-drawn mask sits next to the tadpole instead of on it**: th
 
 What I take from this:
 - On the three well-annotated photos the model reaches about **0.96 overlap**, and on all four photos its **area is within 10 %** of the hand-drawn one, which is the quantity the tool is for.
-- Four photos are very few, and I also picked the best round using those same four, so these numbers are optimistic, not an independent test.
+- Four photos are very few, and I also picked the best round using those same four, so these numbers are optimistic, not an independent test. The next section adds 11 photos that were not used for anything.
 - I did not retrain after finding the displaced mask; I preferred to leave the project as it was and say so here.
+
+## Do I really need a neural network?
+
+This model is **deep learning**: a U-Net with millions of parameters. That has costs: someone has to outline the tadpole by hand in many photos (slow, and, as `emb_047` shows, the outlines can also be wrong), training needs a GPU, and the network is harder to explain and to repair than a simple method. So it is fair to ask whether something much simpler would do.
+
+I tried the simplest thing I could think of, **with no learning at all**: estimate the colour of the background from the border of the photo, mark the pixels that differ from it (with an automatic threshold) and keep the largest blob. I ran it once, without tuning anything.
+
+I compared both on the **11 annotated photos the network never saw** (emb_002 to emb_012, whose masks the training notebook ignored), so the comparison does not favour the network:
+
+![Neural network against the simple colour threshold](assets/baseline_comparison.png)
+
+| 11 photos never used in training | U-Net | Colour threshold |
+|---|---|---|
+| Average overlap with the hand-drawn mask (Dice) | **0.97** | 0.78 |
+| Median overlap | 0.97 | 0.94 |
+| Worst photo | 0.93 | 0.00 |
+| Photos with the area within 10 % of the hand-drawn one | **11 of 11** | 8 of 11 |
+| Median area error | 3.8 % | 4.7 % |
+
+What I take from this:
+- **Where the simple method works, it works almost as well:** its overlap is 0.93–0.98 against 0.93–0.99 for the network. For a first measurement on this clean background it is a serious alternative.
+- **But it can fail completely.** In two photos (emb_006 and emb_007, small tadpoles) its overlap was zero; in emb_006, for example, it chose a large shaded strip of the paper instead of the animal, and the area came out about 40 times too large. Over all 28 photos with a correct mask it had zero overlap in 6, five of them small tadpoles. The network, in emb_006 and emb_007, was right (0.96 and 0.95).
+- **That robustness is what the network buys,** at the cost of annotated photos, a GPU and less transparency. On this evidence I would use the network if the photos can vary, and the simple method if I could guarantee that the tadpole is always the biggest thing in the picture.
+- **Limits of this comparison:** 11 photos from one camera setup, and the simple method is my own quick version, not an optimised one; a better classical method could do better. The 11 photos are also consecutive in their numbering, so they are probably more alike than a truly new batch would be. The overlap of the network on them (0.97 on average, area within 10 % in all of them) is the best independent evidence I have that the model works.
 
 ## Photos the model had never seen
 
@@ -82,7 +106,7 @@ The areas of the 48 photos run from 0.37 to 6.20 cm² (median 1.84 cm²). There 
 - **One photographic setup:** same camera, graph-paper background, similar distance. A different background, lighting or camera will probably need new annotated photos.
 - **The area is only as good as the scale.** The value 317.43 px/cm comes from my own photos. If the camera is closer or farther, the scale changes: in the smallest samples above the grid squares look larger than in the others, so those photos were probably taken at another zoom or distance and would need their own scale. Always calibrate with a ruler in each photo setup.
 - **The threshold (50 %) is not tuned.** I did not try other values.
-- **Checked on few photos.** Beyond the four above, nothing is compared with a hand measurement.
+- **Checked on 15 annotated photos** (the 4 check photos and the 11 above, one of which has a faulty mask), all from the same photographic setup. Nothing else is compared with a hand measurement.
 
 ## Install and use
 
