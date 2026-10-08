@@ -72,9 +72,9 @@ I also ran it on 48 more photos of the same kind that I never annotated. Here ar
 
 ![Six unseen photos with the model's mask and area](assets/unseen_samples.png)
 
-The areas of the 48 photos run from 0.37 to 6.20 cm² (median 1.84 cm²). There is no hand-drawn reference for them, so I can only judge them by eye. They look right, with these exceptions:
-- In **DSCN7473** the dark tip at the end of the tail is left out of the mask.
-- In 5 of the 48 masks there are extra small pieces besides the tadpole. In four of them these are under 2 % of the area; in **DSCN7527** the extra piece is about 13 %.
+The areas of the 48 photos run from 0.37 to 6.20 cm² (median 1.84 cm²). There is no hand-drawn reference for them, so I can only judge them by eye, and they look right to me. Two details:
+- In **DSCN7473** the dark piece at the end of the tail is the modelling clay used to hold the tadpole in place. It is not part of the animal, and the model correctly leaves it out of the mask.
+- In 5 of the 48 masks there are extra small pieces besides the tadpole. In four of them these are under 2 % of the area; in **DSCN7527** the extra piece is about 13 %. I did not check what those pieces are.
 
 ## Things to keep in mind
 
