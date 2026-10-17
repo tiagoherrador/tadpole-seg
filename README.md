@@ -1,16 +1,27 @@
 # tadpole-seg – measuring how big a tadpole is, from a photo
 
-You give it a photo of a *Xenopus* tadpole lying next to a ruler (or graph paper), and it gives you back a **mask** that marks exactly which pixels are tadpole, and the tadpole's **area in cm²**.
+> **Research and portfolio project — not a finished measuring instrument.** It was trained on 18 annotated photos from one camera setup; see [Things to keep in mind](#things-to-keep-in-mind).
 
-![A photo, the mask the model draws and the overlay](assets/example_prediction.png)
-
-## Why I built it, and what it is for
+## What this project is
 
 Size is one of the simplest things to compare between animals: bigger or smaller, faster or slower growth, one group against another. But measuring it by hand means tracing the outline of every tadpole in every photo, which is slow, tiring and a bit different every time you do it.
 
-So I trained a small neural network to do the tracing. Once it works, measuring a new photo takes seconds, and the same photo always gives the same answer. It is meant for anyone who needs the **size of many tadpoles photographed in the same way** (same camera, same background, same distance), for example to compare groups or follow growth over time.
+So I trained a small neural network to do the tracing. You give it a photo of a *Xenopus* tadpole lying next to a ruler (or graph paper), and it gives you back a **mask** that marks exactly which pixels are tadpole, and the tadpole's **area in cm²**. Measuring a new photo takes seconds, and the same photo always gives the same answer. It is meant for anyone who needs the **size of many tadpoles photographed in the same way** (same camera, same background, same distance), for example to compare groups or follow growth over time.
 
-It is a research and portfolio project, not a finished measuring instrument: see "Things to keep in mind" below.
+## The short version
+
+| Question | What I found |
+|---|---|
+| Does it outline the tadpole well? | **Yes.** On 11 annotated photos never used in training, its outline overlaps the hand-drawn one with an average Dice of **0.97**, and the area is within 10 % in **all 11**. |
+| Why does the training curve stop at 0.72, then? | **A data error, not a model error.** One of the four hand-drawn check masks is displaced next to the tadpole. On the other three the overlap is about 0.96. |
+| Do I really need a neural network? | **For robustness, yes.** A simple colour threshold with no learning comes close where it works (median 0.94), but fails completely on some small tadpoles. The network's worst photo is 0.93. |
+| How much should I trust it? | **As a proof of concept.** 18 annotated photos and one camera setup are very little; a new setup will probably need new annotations. |
+
+## What it gives you
+
+For each photo, a mask, an overlay and the area in cm²:
+
+![A photo, the mask the model draws and the overlay](assets/example_prediction.png)
 
 ## How it works
 
@@ -24,7 +35,12 @@ It is a research and portfolio project, not a finished measuring instrument: see
 
 *Why does the encoder part start with "knowledge" from other images?* The first half of the U-Net is an **EfficientNet-B0** that was already trained to recognise shapes and textures in millions of everyday photos (the ImageNet collection). I then **fine-tuned** the whole network on my tadpole photos. This is called transfer learning, and it is what makes it possible to learn this task from only a handful of annotated photos.
 
-## How I made it
+## Following the project step by step
+
+<details>
+<summary><b>Show the four steps</b> (training, the check photos, network vs a simple threshold, unseen photos)</summary>
+
+### 1. How I made it
 
 **The data.** Photos of tadpoles taken with the same camera setup. For some of them I drew the tadpole's outline by hand, which gives a *mask*: a black-and-white image in which white means tadpole. These masks are the "right answers" the network learns from. In a mask, the tadpole is only 0.15 % to 3.9 % of the picture, so the network has to find a small object in a big background.
 
@@ -44,7 +60,7 @@ It is a research and portfolio project, not a finished measuring instrument: see
 
 ![Overlap with the hand-drawn mask while training](assets/validation_metrics.png)
 
-## How well does it work?
+### 2. How well does it work?
 
 The curve above rises quickly and then stays at an overlap (Dice) of about **0.72**, which looks mediocre. When I looked at the four check photos one by one, the reason turned out to be in the data, not in the model:
 
@@ -63,10 +79,10 @@ In **emb_047 the hand-drawn mask sits next to the tadpole instead of on it**: th
 
 What I take from this:
 - On the three well-annotated photos the model reaches about **0.96 overlap**, and on all four photos its **area is within 10 %** of the hand-drawn one, which is the quantity the tool is for.
-- Four photos are very few, and I also picked the best round using those same four, so these numbers are optimistic, not an independent test. The next section adds 11 photos that were not used for anything.
+- Four photos are very few, and I also picked the best round using those same four, so these numbers are optimistic, not an independent test. Step 3 adds 11 photos that were not used for anything.
 - I did not retrain after finding the displaced mask; I preferred to leave the project as it was and say so here.
 
-## Do I really need a neural network?
+### 3. Do I really need a neural network?
 
 This model is **deep learning**: a U-Net with millions of parameters. That has costs: someone has to outline the tadpole by hand in many photos (slow, and, as `emb_047` shows, the outlines can also be wrong), training needs a GPU, and the network is harder to explain and to repair than a simple method. So it is fair to ask whether something much simpler would do.
 
@@ -90,7 +106,7 @@ What I take from this:
 - **That robustness is what the network buys,** at the cost of annotated photos, a GPU and less transparency. On this evidence I would use the network if the photos can vary, and the simple method if I could guarantee that the tadpole is always the biggest thing in the picture.
 - **Limits of this comparison:** 11 photos from one camera setup, and the simple method is my own quick version, not an optimised one; a better classical method could do better. The 11 photos are also consecutive in their numbering, so they are probably more alike than a truly new batch would be. The overlap of the network on them (0.97 on average, area within 10 % in all of them) is the best independent evidence I have that the model works.
 
-## Photos the model had never seen
+### 4. Photos the model had never seen
 
 I also ran it on 48 more photos of the same kind that I never annotated. Here are six of them, from the smallest to the largest tadpole:
 
@@ -100,6 +116,8 @@ The areas of the 48 photos run from 0.37 to 6.20 cm² (median 1.84 cm²). There 
 - In **DSCN7473** the dark piece at the end of the tail is the modelling clay used to hold the tadpole in place. It is not part of the animal, and the model correctly leaves it out of the mask.
 - In 5 of the 48 masks there are extra small pieces besides the tadpole. In four of them these are under 2 % of the area; in **DSCN7527** the extra piece is about 13 %. I did not check what those pieces are.
 
+</details>
+
 ## Things to keep in mind
 
 - **Very little data:** 18 annotated photos for training and 4 to check. It is a proof of concept, not a robust model.
@@ -108,7 +126,7 @@ The areas of the 48 photos run from 0.37 to 6.20 cm² (median 1.84 cm²). There 
 - **The threshold (50 %) is not tuned.** I did not try other values.
 - **Checked on 15 annotated photos** (the 4 check photos and the 11 above, one of which has a faulty mask), all from the same photographic setup. Nothing else is compared with a hand measurement.
 
-## Install and use
+## Try it yourself
 
 ```bash
 pip install .
